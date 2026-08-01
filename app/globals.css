@@ -296,11 +296,9 @@ main { display: flex; flex-direction: column; }
 .services-head h2 em { color: var(--pink); }
 .services-heading-copy > p { max-width: 620px; margin: 0; color: #68746b; font-size: 16px; line-height: 1.7; }
 /* Two mutually exclusive modes. .is-pinned is added by amigas-experience.tsx
-   whenever the vertical-scroll-driven pin is live (every viewport width, touch
-   included) — the track is then moved with translateX and must not scroll
-   natively. Without the class (no JS, or reduced motion) the narrow-viewport
-   rules further down turn on native horizontal scroll instead, since that is
-   the only way to reach the cards past the first. */
+   on desktop, where the track is moved with translateX. Without the class
+   (mobile, no JS, or reduced motion), native horizontal scroll stays enabled
+   so the page can always continue to the next section. */
 .services-hscroll { overflow: hidden; }
 .services-hscroll.is-pinned { overflow: hidden; touch-action: auto; }
 .visual-services { display: flex; gap: 24px; width: max-content; padding: 8px 0 18px; }
@@ -380,10 +378,8 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .film-intro { grid-template-columns: 1fr; }
   .services-head { grid-template-columns: 1fr; }
   .services-head .eyebrow { margin-bottom: 25px; }
-  /* Fallback only — the pinned, vertical-scroll-driven mode now runs at this
-     width too (see amigas-experience.tsx). This is what's left when JS never
-     runs or reduced motion is on, where native horizontal scroll is the only
-     way to reach the rest of the cards. */
+  /* Mobile/tablet fallback: the gallery uses native horizontal scroll because
+     the vertical-scroll-driven pin is desktop-only. */
   .services-hscroll:not(.is-pinned) {
     width: 100%;
     max-width: 100%;
@@ -393,20 +389,6 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
-  }
-  /* Pinned mode below the desktop breakpoint needs an explicit card box. The
-     base (desktop) card takes its width from the caption text's max-content
-     width, which is far wider than a phone viewport — only one third of a card
-     would be on screen. Height is capped to the pin's vertical budget (the
-     viewport minus its 12% start offset) and the frame absorbs whatever the
-     caption doesn't use, so the card can never outgrow the pinned window. */
-  .services-hscroll.is-pinned .service-visual {
-    flex: 0 0 min(62vw, 420px);
-    height: min(74vh, 620px);
-  }
-  .services-hscroll.is-pinned .service-visual-frame {
-    flex: 1 1 auto;
-    width: 100%; height: auto; min-height: 0;
   }
   .closing { grid-template-columns: 1fr; padding-top: 5vh; }
   .clinic-map { height: 480px; }
@@ -493,17 +475,10 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .services-hscroll:not(.is-pinned) { overflow-x: auto; overflow-y: hidden; }
   .visual-services { display: flex; gap: 6vw; min-width: max-content; padding-right: 22px; }
   .service-visual { border-radius: 22px; }
-  /* Fallback (native scroll) only: without a pin the section can grow taller
-     than the viewport, so width-driven sizing is safe. In pinned mode the
-     height-driven rule in the 900px block above applies instead. */
+  /* Native mobile scroll: width-driven sizing is safe because this section is
+     not pinned and can grow naturally with the cards. */
   .services-hscroll:not(.is-pinned) .service-visual { flex: 0 0 calc(100vw - 24vw); }
   .services-hscroll:not(.is-pinned) .service-visual-frame { width: 100%; height: auto; }
-  /* Phone: a wider card relative to the viewport, so the current one reads as
-     the subject and the next one only peeks in at the edge. */
-  .services-hscroll.is-pinned .service-visual {
-    flex: 0 0 78vw;
-    height: min(72vh, 520px);
-  }
   .closing { padding-inline: 24px; }
   .clinic-map { height: 390px; border-width: 8px; border-radius: 24px; }
   .closing-symbol { height: 430px; }

@@ -119,17 +119,6 @@ export default function AmigasExperience() {
     // start/end math) — killing everything before rebuilding guarantees a
     // clean slate on every (re)mount, not just a full page load.
     ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-    // iOS Safari's own touch-scroll physics (momentum, rubber-banding, the
-    // address bar collapsing mid-gesture) can desync a pinned ScrollTrigger's
-    // math from the real scroll position badly enough that the services
-    // gallery pin never releases — scrolling past the last card does nothing.
-    // normalizeScroll replaces native touch scrolling with GSAP's own,
-    // consistent implementation, which is the fix GSAP itself documents for
-    // this failure mode. Restricted to touch (not "wheel,touch", the
-    // default) so desktop trackpad/wheel scrolling is untouched.
-    if (ScrollTrigger.isTouch) {
-      ScrollTrigger.normalizeScroll({ type: "touch" });
-    }
     const ctx = gsap.context(() => {
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -239,23 +228,17 @@ export default function AmigasExperience() {
         scrollTrigger: { trigger: ".consultation-film", start: "top 75%", end: "bottom 35%", scrub: 1 },
       });
       // Services gallery: the track is pinned in place and driven purely by
-      // vertical scroll progress (translateX, not native horizontal scroll), on
-      // touch too — the gallery should feel like scrolling the page, never like
-      // a sideways drag. Only reduced motion (and no JS at all) falls back to
-      // plain overflow-x: auto; the .is-pinned class below tells globals.css
-      // which of the two modes is live.
+      // vertical scroll progress on desktop. Mobile keeps native horizontal
+      // scrolling so the page can always leave this section normally. The
+      // .is-pinned class below tells globals.css which mode is live.
       const servicesWindow = root.current?.querySelector<HTMLElement>("#services-hscroll");
       const servicesTrack = root.current?.querySelector<HTMLElement>(".visual-services");
-      if (servicesWindow && servicesTrack && !prefersReducedMotion) {
-        // Mobile browsers fire a resize on every address-bar collapse/expand.
-        // Without this, each one refreshes the pin mid-scroll and the track
-        // jumps, because the pin's start is measured against a viewport height
-        // that changed underneath it.
+      const isDesktop = window.matchMedia("(min-width: 901px)").matches;
+      if (servicesWindow && servicesTrack && isDesktop && !prefersReducedMotion) {
         ScrollTrigger.config({ ignoreMobileResize: true });
 
-        // Set before measuring: it swaps the track out of native horizontal
-        // scroll (overflow-x: auto, touch-action: pan-x) and into the pinned
-        // sizing, which changes both scrollWidth and clientWidth.
+        // Set before measuring so the desktop pinned sizing is active when
+        // scrollWidth and clientWidth are read.
         servicesWindow.classList.add("is-pinned");
 
         const getScroll = () => Math.max(0, servicesTrack.scrollWidth - servicesWindow.clientWidth);
@@ -294,7 +277,6 @@ export default function AmigasExperience() {
     }, root);
     return () => {
       ctx.revert();
-      ScrollTrigger.normalizeScroll(false);
     };
   }, []);
 
