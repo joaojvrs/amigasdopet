@@ -54,9 +54,33 @@ nav a:not(.nav-cta):hover { color: var(--green-dark); background: rgba(184,219,1
   position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center;
   will-change: opacity, transform, filter;
 }
-/* Opacity is applied imperatively once JS runs (see the scroll driver in
-   amigas-experience.tsx) so that without JS every step stays legible instead
-   of vanishing — a stacked, unanimated fallback beats an invisible one. */
+/* Opacity is server-rendered per step (intro at 1, the rest at 0) and then
+   driven imperatively by the scroll driver in amigas-experience.tsx. Without
+   the server-rendered value the whole stack would paint at once, overlapping,
+   until the driver's first frame. */
+/* No JS at all: the driver never runs, so un-stack the steps into normal flow
+   and show them as a plain readable column — absolutely positioned steps at
+   inset: 0 would otherwise sit on top of each other. The !important flags beat
+   the inline opacity: 0 the server writes for every step after the intro, and
+   the later .tag-reveal-logo rule further down this file. */
+@media (scripting: none) {
+  .tag-intro { height: auto; }
+  .tag-sticky {
+    position: static; height: auto; overflow: visible;
+    align-items: center; padding-block: 108px 56px;
+  }
+  .tag-narrative-step {
+    position: static; inset: auto;
+    opacity: 1 !important;
+    margin-bottom: 48px;
+  }
+  .tag-prompt { display: none; }
+  /* Three.js never boots, so the canvas stays blank — show the plain logo
+     (the medallion's end state) in its place, at its full size. */
+  .tag-stage { min-height: min(70vh, 520px); }
+  .tag-canvas-wrap { display: none; }
+  .tag-reveal-logo { opacity: 1 !important; }
+}
 .tag-narrative-step .eyebrow { margin: 0 0 16px; }
 .tag-narrative-step h1 {
   margin: 0 0 18px; max-width: 540px; font-size: clamp(34px, 3.5vw, 50px);
@@ -265,7 +289,14 @@ main { display: flex; flex-direction: column; }
 .services-head h2 { margin: 0; max-width: 900px; }
 .services-head h2 em { color: var(--pink); }
 .services-heading-copy > p { max-width: 620px; margin: 0; color: #68746b; font-size: 16px; line-height: 1.7; }
+/* Two mutually exclusive modes. .is-pinned is added by amigas-experience.tsx
+   whenever the vertical-scroll-driven pin is live (every viewport width, touch
+   included) — the track is then moved with translateX and must not scroll
+   natively. Without the class (no JS, or reduced motion) the narrow-viewport
+   rules further down turn on native horizontal scroll instead, since that is
+   the only way to reach the cards past the first. */
 .services-hscroll { overflow: hidden; }
+.services-hscroll.is-pinned { overflow: hidden; touch-action: auto; }
 .visual-services { display: flex; gap: 24px; width: max-content; padding: 8px 0 18px; }
 .service-visual {
   position: relative; display: flex; flex-direction: column; flex: 0 0 auto;
@@ -343,10 +374,11 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .film-intro { grid-template-columns: 1fr; }
   .services-head { grid-template-columns: 1fr; }
   .services-head .eyebrow { margin-bottom: 25px; }
-  /* JS only sets up the pin/scrub above 900px (see amigas-experience.tsx's
-     isDesktop check) — below that, native horizontal scroll is the only way
-     to reach the rest of the cards. */
-  .services-hscroll {
+  /* Fallback only — the pinned, vertical-scroll-driven mode now runs at this
+     width too (see amigas-experience.tsx). This is what's left when JS never
+     runs or reduced motion is on, where native horizontal scroll is the only
+     way to reach the rest of the cards. */
+  .services-hscroll:not(.is-pinned) {
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
@@ -355,6 +387,20 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
+  }
+  /* Pinned mode below the desktop breakpoint needs an explicit card box. The
+     base (desktop) card takes its width from the caption text's max-content
+     width, which is far wider than a phone viewport — only one third of a card
+     would be on screen. Height is capped to the pin's vertical budget (the
+     viewport minus its 12% start offset) and the frame absorbs whatever the
+     caption doesn't use, so the card can never outgrow the pinned window. */
+  .services-hscroll.is-pinned .service-visual {
+    flex: 0 0 min(62vw, 420px);
+    height: min(74vh, 620px);
+  }
+  .services-hscroll.is-pinned .service-visual-frame {
+    flex: 1 1 auto;
+    width: 100%; height: auto; min-height: 0;
   }
   .closing { grid-template-columns: 1fr; padding-top: 5vh; }
   .clinic-map { height: 480px; }
@@ -399,7 +445,13 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .tag-narrative-note,
   .tag-prompt,
   .hero-actions { display: none; }
-  .tag-stage { min-height: 0; }
+  /* The text row (row 1) is sized to its own content and leaves little slack,
+     so the medallion is pulled up within row 2 instead of shrinking row 1 —
+     translate only, no resize, so TagScene's ResizeObserver never fires and
+     the 3D object keeps its size. Nothing sits below the stage in this pinned
+     view, so the gap it leaves at the row's bottom reads as intentional
+     breathing room, not a layout hole. */
+  .tag-stage { min-height: 0; transform: translateY(-18%); }
   .tag-aura { display: none; }
   .tag-stage-backdrop {
     inset: 8% 5% 5%;
@@ -432,15 +484,20 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .consultation-video { object-position: 61% center; }
   .services { padding-top: 12vh; }
   .services-head { margin-bottom: 65px; }
-  /* Below the desktop breakpoint the pin/scrub isn't set up (see
-     amigas-experience.tsx) — plain native horizontal scroll instead. */
-  .services-hscroll { overflow-x: auto; overflow-y: hidden; }
+  .services-hscroll:not(.is-pinned) { overflow-x: auto; overflow-y: hidden; }
   .visual-services { display: flex; gap: 6vw; min-width: max-content; padding-right: 22px; }
-  /* No pin here (native scroll instead, see amigas-experience.tsx), so the
-     section can simply grow taller than the viewport — width-driven sizing
-     is safe again. */
-  .service-visual { flex: 0 0 calc(100vw - 24vw); border-radius: 22px; }
-  .service-visual-frame { width: 100%; height: auto; }
+  .service-visual { border-radius: 22px; }
+  /* Fallback (native scroll) only: without a pin the section can grow taller
+     than the viewport, so width-driven sizing is safe. In pinned mode the
+     height-driven rule in the 900px block above applies instead. */
+  .services-hscroll:not(.is-pinned) .service-visual { flex: 0 0 calc(100vw - 24vw); }
+  .services-hscroll:not(.is-pinned) .service-visual-frame { width: 100%; height: auto; }
+  /* Phone: a wider card relative to the viewport, so the current one reads as
+     the subject and the next one only peeks in at the edge. */
+  .services-hscroll.is-pinned .service-visual {
+    flex: 0 0 78vw;
+    height: min(72vh, 520px);
+  }
   .closing { padding-inline: 24px; }
   .clinic-map { height: 390px; border-width: 8px; border-radius: 24px; }
   .closing-symbol { height: 430px; }

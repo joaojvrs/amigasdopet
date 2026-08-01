@@ -37,7 +37,7 @@ const NARRATIVE_STEPS: NarrativeStep[] = [
   },
   { key: "step1", start: .18, end: .38, lead: "Onde seu pet é recebido com carinho." },
   { key: "step2", start: .38, end: .58, lead: "Com estrutura, atenção e cuidado de verdade." },
-  { key: "step3", start: .48, end: .84, lead: "Atendimento veterinário com carinho e cuidado de verdade." },
+  { key: "step3", start: .58, end: .84, lead: "Atendimento veterinário com carinho e cuidado de verdade." },
   {
     key: "final", start: .94, end: 1,
     brand: "Bem-vindo à Clínica Amigas do Pet",
@@ -228,13 +228,25 @@ export default function AmigasExperience() {
         scrollTrigger: { trigger: ".consultation-film", start: "top 75%", end: "bottom 35%", scrub: 1 },
       });
       // Services gallery: the track is pinned in place and driven purely by
-      // vertical scroll progress (translateX, not native horizontal scroll).
-      // Below the desktop breakpoint, and under reduced motion, .services-hscroll
-      // falls back to plain overflow-x: auto (see globals.css) instead.
+      // vertical scroll progress (translateX, not native horizontal scroll), on
+      // touch too — the gallery should feel like scrolling the page, never like
+      // a sideways drag. Only reduced motion (and no JS at all) falls back to
+      // plain overflow-x: auto; the .is-pinned class below tells globals.css
+      // which of the two modes is live.
       const servicesWindow = root.current?.querySelector<HTMLElement>("#services-hscroll");
       const servicesTrack = root.current?.querySelector<HTMLElement>(".visual-services");
-      const isDesktop = window.matchMedia("(min-width: 901px)").matches;
-      if (servicesWindow && servicesTrack && isDesktop && !prefersReducedMotion) {
+      if (servicesWindow && servicesTrack && !prefersReducedMotion) {
+        // Mobile browsers fire a resize on every address-bar collapse/expand.
+        // Without this, each one refreshes the pin mid-scroll and the track
+        // jumps, because the pin's start is measured against a viewport height
+        // that changed underneath it.
+        ScrollTrigger.config({ ignoreMobileResize: true });
+
+        // Set before measuring: it swaps the track out of native horizontal
+        // scroll (overflow-x: auto, touch-action: pan-x) and into the pinned
+        // sizing, which changes both scrollWidth and clientWidth.
+        servicesWindow.classList.add("is-pinned");
+
         const getScroll = () => Math.max(0, servicesTrack.scrollWidth - servicesWindow.clientWidth);
 
         gsap.to(servicesTrack, {
@@ -293,7 +305,19 @@ export default function AmigasExperience() {
 
           <div className="tag-narrative">
             {NARRATIVE_STEPS.map((step) => (
-              <div key={step.key} className="tag-narrative-step" data-step={step.key}>
+              // Server-rendered opacity: only the step that owns progress 0 is
+              // visible in the first paint. Without this the whole stack renders
+              // at full opacity until the scroll driver's first applyProgress()
+              // call, and every step overlaps the others (they all sit at
+              // inset: 0). With scripting disabled entirely, the
+              // `scripting: none` block in globals.css un-stacks the steps into
+              // normal flow so all of them stay legible.
+              <div
+                key={step.key}
+                className="tag-narrative-step"
+                data-step={step.key}
+                style={{ opacity: step.start <= 0 ? 1 : 0 }}
+              >
                 {step.eyebrow && <p className="eyebrow">{step.eyebrow}</p>}
                 {step.heading && <h1>{step.heading}</h1>}
                 {step.brand && <p className="tag-narrative-brand">{step.brand}</p>}
@@ -377,7 +401,9 @@ export default function AmigasExperience() {
               <p>Encontre o cuidado indicado para cada momento — da prevenção ao diagnóstico, do tratamento à recuperação.</p>
             </div>
           </div>
-          <div className="services-scroll-note"><span>Deslize para explorar</span><i>→</i></div>
+          {/* The gallery advances with vertical scroll on every width now, so
+              the hint must not tell people to swipe sideways. */}
+          <div className="services-scroll-note"><span>Role para explorar</span><i>→</i></div>
           <div className="services-hscroll" id="services-hscroll">
             <div className="visual-services">
               {visualServices.map((item, index) => (
