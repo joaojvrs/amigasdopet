@@ -37,7 +37,13 @@ nav a:not(.nav-cta):hover { color: var(--green-dark); background: rgba(184,219,1
 .tag-intro { position: relative; height: 300vh; background: var(--cream); }
 .tag-sticky {
   position: sticky; top: 0;
-  height: 100vh; height: 100dvh;
+  /* svh (small viewport height), not dvh: dvh tracks the browser chrome as it
+     collapses on the first scroll, so this box (and everything sized as a
+     percentage of it, including the mobile medallion's translateY below)
+     would visibly grow and jump right as the user starts scrolling. svh
+     assumes the chrome stays visible, so the box never resizes underneath
+     the content. */
+  height: 100vh; height: 100svh;
   overflow: hidden; isolation: isolate;
   display: grid; grid-template-columns: minmax(300px, 42%) 1fr;
   gap: 3vw; padding: 0 4vw;

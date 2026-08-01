@@ -262,7 +262,7 @@ export default function TagScene({ progress }: TagSceneProps) {
     // Computed once (not per frame): fewer turns on small screens (performance)
     // and under prefers-reduced-motion (still resolves to the logo, just calmer).
     const SPIN_END = .94;
-    const TOTAL_TURNS = prefersReducedMotion ? 0 : (isNarrowViewport ? 1.25 : 1.5);
+    const TOTAL_TURNS = prefersReducedMotion ? 0 : (isNarrowViewport ? 0.5 : 1.5);
     const BASE_SCALE = isNarrowViewport ? 1.12 : 1;
 
     let frame = 0;

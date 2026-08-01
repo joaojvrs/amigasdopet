@@ -119,6 +119,17 @@ export default function AmigasExperience() {
     // start/end math) — killing everything before rebuilding guarantees a
     // clean slate on every (re)mount, not just a full page load.
     ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    // iOS Safari's own touch-scroll physics (momentum, rubber-banding, the
+    // address bar collapsing mid-gesture) can desync a pinned ScrollTrigger's
+    // math from the real scroll position badly enough that the services
+    // gallery pin never releases — scrolling past the last card does nothing.
+    // normalizeScroll replaces native touch scrolling with GSAP's own,
+    // consistent implementation, which is the fix GSAP itself documents for
+    // this failure mode. Restricted to touch (not "wheel,touch", the
+    // default) so desktop trackpad/wheel scrolling is untouched.
+    if (ScrollTrigger.isTouch) {
+      ScrollTrigger.normalizeScroll({ type: "touch" });
+    }
     const ctx = gsap.context(() => {
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -281,7 +292,10 @@ export default function AmigasExperience() {
         });
       }
     }, root);
-    return () => ctx.revert();
+    return () => {
+      ctx.revert();
+      ScrollTrigger.normalizeScroll(false);
+    };
   }, []);
 
   return (
