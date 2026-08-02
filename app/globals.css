@@ -285,7 +285,7 @@ main { display: flex; flex-direction: column; }
 .consultation-copy h2 em { color: #f7b6c6; }
 .consultation-copy > p:last-child { max-width: 470px; color: #d8e3db; font-size: 16px; line-height: 1.75; }
 
-.services { min-height: 100vh; padding: 12vh 4vw 9vh; background: #f6f3ef; overflow: hidden; }
+.services { min-height: 100vh; padding: 12vh 4vw 9vh; background: #f6f3ef; overflow: visible; }
 .services-head { display: grid; grid-template-columns: .8fr 1.5fr; align-items: end; gap: 5vw; margin-bottom: 28px; }
 .services-kicker { display: flex; align-items: center; gap: 18px; align-self: start; }
 .services-number { color: #e65f89; font-family: "Montserrat", Arial, sans-serif; font-size: 13px; font-weight: 700; }
@@ -295,12 +295,13 @@ main { display: flex; flex-direction: column; }
 .services-head h2 { margin: 0; max-width: 900px; }
 .services-head h2 em { color: var(--pink); }
 .services-heading-copy > p { max-width: 620px; margin: 0; color: #68746b; font-size: 16px; line-height: 1.7; }
-/* Two mutually exclusive modes. .is-pinned is added by amigas-experience.tsx
-   on desktop, where the track is moved with translateX. Without the class
-   (mobile, no JS, or reduced motion), native horizontal scroll stays enabled
-   so the page can always continue to the next section. */
+/* Three modes: .is-pinned drives the track with desktop pinning,
+   .is-mobile-scroll uses a vertical sticky corridor, and the unclassified
+   fallback keeps native horizontal scrolling available without JS/reduced
+   motion. */
 .services-hscroll { overflow: hidden; }
 .services-hscroll.is-pinned { overflow: hidden; touch-action: auto; }
+.services-sticky { width: 100%; }
 .visual-services { display: flex; gap: 24px; width: max-content; padding: 8px 0 18px; }
 .service-visual {
   position: relative; display: flex; flex-direction: column; flex: 0 0 auto;
@@ -378,9 +379,9 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .film-intro { grid-template-columns: 1fr; }
   .services-head { grid-template-columns: 1fr; }
   .services-head .eyebrow { margin-bottom: 25px; }
-  /* Mobile/tablet fallback: the gallery uses native horizontal scroll because
-     the vertical-scroll-driven pin is desktop-only. */
-  .services-hscroll:not(.is-pinned) {
+  /* No-JS fallback: the native horizontal gallery is only used when neither
+     GSAP desktop pinning nor the mobile sticky corridor is active. */
+  .services-hscroll:not(.is-pinned):not(.is-mobile-scroll) {
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
@@ -389,6 +390,27 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
+  }
+  .services-hscroll.is-mobile-scroll {
+    height: calc((100svh - 74px) + var(--services-scroll-distance, 0px));
+    overflow: visible;
+    touch-action: pan-y;
+  }
+  .services-hscroll.is-mobile-scroll .services-sticky {
+    position: sticky;
+    top: 74px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: calc(100svh - 74px);
+    overflow: hidden;
+  }
+  .services-hscroll.is-mobile-scroll .service-visual {
+    flex: 0 0 min(78vw, 420px);
+  }
+  .services-hscroll.is-mobile-scroll .service-visual-frame {
+    width: 100%;
+    height: auto;
   }
   .closing { grid-template-columns: 1fr; padding-top: 5vh; }
   .clinic-map { height: 480px; }
@@ -472,13 +494,13 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .consultation-video { object-position: 61% center; }
   .services { padding-top: 12vh; }
   .services-head { margin-bottom: 65px; }
-  .services-hscroll:not(.is-pinned) { overflow-x: auto; overflow-y: hidden; }
+  .services-hscroll:not(.is-pinned):not(.is-mobile-scroll) { overflow-x: auto; overflow-y: hidden; }
   .visual-services { display: flex; gap: 6vw; min-width: max-content; padding-right: 22px; }
   .service-visual { border-radius: 22px; }
   /* Native mobile scroll: width-driven sizing is safe because this section is
      not pinned and can grow naturally with the cards. */
-  .services-hscroll:not(.is-pinned) .service-visual { flex: 0 0 calc(100vw - 24vw); }
-  .services-hscroll:not(.is-pinned) .service-visual-frame { width: 100%; height: auto; }
+  .services-hscroll:not(.is-pinned):not(.is-mobile-scroll) .service-visual { flex: 0 0 calc(100vw - 24vw); }
+  .services-hscroll:not(.is-pinned):not(.is-mobile-scroll) .service-visual-frame { width: 100%; height: auto; }
   .closing { padding-inline: 24px; }
   .clinic-map { height: 390px; border-width: 8px; border-radius: 24px; }
   .closing-symbol { height: 430px; }

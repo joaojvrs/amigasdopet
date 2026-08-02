@@ -119,6 +119,8 @@ export default function AmigasExperience() {
     // start/end math) — killing everything before rebuilding guarantees a
     // clean slate on every (re)mount, not just a full page load.
     ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    let servicesResizeObserver: ResizeObserver | null = null;
+    let servicesRefreshFrame = 0;
     const ctx = gsap.context(() => {
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -227,55 +229,91 @@ export default function AmigasExperience() {
         yPercent: -18, opacity: 1, ease: "none",
         scrollTrigger: { trigger: ".consultation-film", start: "top 75%", end: "bottom 35%", scrub: 1 },
       });
-      // Services gallery: the track is pinned in place and driven purely by
-      // vertical scroll progress on desktop. Mobile keeps native horizontal
-      // scrolling so the page can always leave this section normally. The
-      // .is-pinned class below tells globals.css which mode is live.
+      // Desktop uses GSAP pinning. Mobile uses a tall vertical corridor with a
+      // sticky viewport: the page keeps scrolling vertically while the track
+      // moves horizontally. This avoids both native sideways dragging and the
+      // mobile pin/normalizer deadlock.
       const servicesWindow = root.current?.querySelector<HTMLElement>("#services-hscroll");
       const servicesTrack = root.current?.querySelector<HTMLElement>(".visual-services");
       const isDesktop = window.matchMedia("(min-width: 901px)").matches;
-      if (servicesWindow && servicesTrack && isDesktop && !prefersReducedMotion) {
-        ScrollTrigger.config({ ignoreMobileResize: true });
-
-        // Set before measuring so the desktop pinned sizing is active when
-        // scrollWidth and clientWidth are read.
-        servicesWindow.classList.add("is-pinned");
-
+      if (servicesWindow && servicesTrack && !prefersReducedMotion) {
         const getScroll = () => Math.max(0, servicesTrack.scrollWidth - servicesWindow.clientWidth);
 
-        gsap.to(servicesTrack, {
-          x: () => -getScroll(),
-          ease: "none",
-          scrollTrigger: {
-            trigger: servicesWindow,
-            start: "top 12%",
-            end: () => "+=" + getScroll(),
-            pin: true,
-            scrub: 1,
-            invalidateOnRefresh: true,
-            anticipatePin: 1,
-            // A fast wheel/trackpad flick can cross the whole pin distance in
-            // under the scrub's 1s catch-up window, so the raw scroll hits
-            // the end and unpins before the eased track has visually caught
-            // up — the gallery looks like it never reaches the last card.
-            fastScrollEnd: true,
-          },
-        });
+        const addMediaParallax = (start: string) => {
+          gsap.utils.toArray<HTMLElement>(".service-visual-media").forEach((img) => {
+            gsap.fromTo(img, { xPercent: -6 }, {
+              xPercent: 6, ease: "none",
+              scrollTrigger: {
+                trigger: servicesWindow,
+                start,
+                end: () => "+=" + getScroll(),
+                scrub: true,
+              },
+            });
+          });
+        };
 
-        gsap.utils.toArray<HTMLElement>(".service-visual-media").forEach((img) => {
-          gsap.fromTo(img, { xPercent: -6 }, {
-            xPercent: 6, ease: "none",
+        if (isDesktop) {
+          ScrollTrigger.config({ ignoreMobileResize: true });
+
+          // Set before measuring so the desktop pinned sizing is active when
+          // scrollWidth and clientWidth are read.
+          servicesWindow.classList.add("is-pinned");
+
+          gsap.to(servicesTrack, {
+            x: () => -getScroll(),
+            ease: "none",
             scrollTrigger: {
               trigger: servicesWindow,
               start: "top 12%",
               end: () => "+=" + getScroll(),
-              scrub: true,
+              pin: true,
+              scrub: 1,
+              invalidateOnRefresh: true,
+              anticipatePin: 1,
+              fastScrollEnd: true,
             },
           });
-        });
+          addMediaParallax("top 12%");
+        } else {
+          servicesWindow.classList.add("is-mobile-scroll");
+
+          const updateMobileDistance = () => {
+            servicesWindow.style.setProperty("--services-scroll-distance", `${getScroll()}px`);
+          };
+          updateMobileDistance();
+
+          gsap.to(servicesTrack, {
+            x: () => -getScroll(),
+            ease: "none",
+            scrollTrigger: {
+              trigger: servicesWindow,
+              start: "top 74px",
+              end: () => "+=" + getScroll(),
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          });
+          addMediaParallax("top 74px");
+
+          if (typeof ResizeObserver !== "undefined") {
+            const refreshMobileServices = () => {
+              cancelAnimationFrame(servicesRefreshFrame);
+              servicesRefreshFrame = requestAnimationFrame(() => {
+                updateMobileDistance();
+                ScrollTrigger.refresh();
+              });
+            };
+            servicesResizeObserver = new ResizeObserver(refreshMobileServices);
+            servicesResizeObserver.observe(servicesWindow);
+            servicesResizeObserver.observe(servicesTrack);
+          }
+        }
       }
     }, root);
     return () => {
+      servicesResizeObserver?.disconnect();
+      cancelAnimationFrame(servicesRefreshFrame);
       ctx.revert();
     };
   }, []);
@@ -401,26 +439,28 @@ export default function AmigasExperience() {
               the hint must not tell people to swipe sideways. */}
           <div className="services-scroll-note"><span>Role para explorar</span><i>→</i></div>
           <div className="services-hscroll" id="services-hscroll">
-            <div className="visual-services">
-              {visualServices.map((item, index) => (
-                <motion.article key={item.title} whileHover={{ y: -8 }} transition={{ duration: .45, ease: "easeOut" }} className="service-visual">
-                  <div className="service-visual-frame">
-                    <Image
-                      className="service-visual-media"
-                      src={item.image}
-                      alt=""
-                      fill
-                      unoptimized
-                      sizes="(max-width: 600px) 76vw, 40vw"
-                    />
-                  </div>
-                  <div className="service-visual-caption">
-                    <span className="service-count">{String(index + 1).padStart(2, "0")}</span>
-                    <h3>{item.title}</h3>
-                    <p>{item.description}</p>
-                  </div>
-                </motion.article>
-              ))}
+            <div className="services-sticky">
+              <div className="visual-services">
+                {visualServices.map((item, index) => (
+                  <motion.article key={item.title} whileHover={{ y: -8 }} transition={{ duration: .45, ease: "easeOut" }} className="service-visual">
+                    <div className="service-visual-frame">
+                      <Image
+                        className="service-visual-media"
+                        src={item.image}
+                        alt=""
+                        fill
+                        unoptimized
+                        sizes="(max-width: 600px) 76vw, 40vw"
+                      />
+                    </div>
+                    <div className="service-visual-caption">
+                      <span className="service-count">{String(index + 1).padStart(2, "0")}</span>
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                    </div>
+                  </motion.article>
+                ))}
+              </div>
             </div>
           </div>
         </section>
