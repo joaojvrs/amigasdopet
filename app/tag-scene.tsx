@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type MutableRefObject } from "react";
+import Image from "next/image";
 import * as THREE from "three";
 
 type TagSceneProps = {
@@ -324,7 +325,14 @@ export default function TagScene({ progress }: TagSceneProps) {
             <small>Cuidado por inteiro</small>
           </div>
           <div className="tag-fallback-face tag-fallback-back">
-            <strong>AMIGAS</strong><em>do Pet</em><small>Veterinária</small>
+            <Image
+              className="tag-fallback-logo"
+              src="/logo-amigas-do-pet.jpeg"
+              width={180}
+              height={180}
+              unoptimized
+              alt=""
+            />
           </div>
         </div>
       </div>

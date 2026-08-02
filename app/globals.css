@@ -198,6 +198,10 @@ nav a:not(.nav-cta):hover { color: var(--green-dark); background: rgba(184,219,1
   letter-spacing: .2em; text-transform: uppercase;
 }
 .tag-fallback-back { transform: rotateY(180deg); }
+.tag-fallback-logo {
+  display: block; width: 78%; aspect-ratio: 1; border-radius: 50%; object-fit: cover;
+  box-shadow: 0 8px 16px rgba(72,22,40,.2);
+}
 .tag-fallback-back strong { color: #f9e9ee; font-size: 29px; font-weight: 800; letter-spacing: -.04em; }
 .tag-fallback-back em { color: white; font: italic 30px Georgia, serif; text-shadow: 0 3px 9px rgba(72,22,40,.32); }
 .tag-fallback-back small { margin-top: 12px; color: #f9e9ee; font-size: 8px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
