@@ -388,7 +388,10 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
     scrollbar-width: thin;
   }
   .services-hscroll.is-mobile-scroll {
-    height: calc((100svh - 74px) + var(--services-scroll-distance, 0px));
+    /* --services-sticky-height is JS-measured (the sticky window's real,
+       content-fit height — see amigas-experience.tsx) with a full-viewport
+       fallback only for the first frame before that measurement lands. */
+    height: calc(var(--services-sticky-height, calc(100svh - 74px)) + var(--services-scroll-distance, 0px));
     overflow: visible;
     touch-action: pan-y;
   }
@@ -398,7 +401,11 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
     display: flex;
     align-items: center;
     width: 100%;
-    height: calc(100svh - 74px);
+    /* Content-fit, not a fixed 100svh: a sticky element always takes its own
+       height worth of scroll to pass by once it releases, so pinning this to
+       a near-full screen left a long dead scroll — frozen on the last card —
+       before the section actually ended. */
+    height: auto;
     overflow: hidden;
   }
   .services-hscroll.is-mobile-scroll .service-visual {
@@ -407,6 +414,10 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .services-hscroll.is-mobile-scroll .service-visual-frame {
     width: 100%;
     height: auto;
+    /* Shorter than the desktop 4/5 portrait crop — on a narrow card the
+       portrait frame plus caption made the sticky window (and so the trailing
+       dead scroll once it releases) nearly a full screen tall. */
+    aspect-ratio: 4 / 3;
   }
   .closing { grid-template-columns: 1fr; padding-top: 5vh; }
   .clinic-map { height: 480px; }
@@ -502,6 +513,17 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .visual-services { display: flex; gap: 6vw; min-width: max-content; padding-right: 22px; }
   .service-visual { border-radius: 22px; }
   .services-hscroll.is-mobile-scroll .service-visual { flex-basis: clamp(240px, 60vw, 290px); }
+  /* At this card width the full description can run to 5+ lines, making the
+     card (and so the sticky window it drives — see .is-mobile-scroll in the
+     900px block) nearly as tall as the screen, which left a long dead scroll
+     after the last card before the section ended. Clamping keeps the card
+     compact; the title alone still identifies the service. */
+  .services-hscroll.is-mobile-scroll .service-visual-caption p {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
   /* Native mobile scroll: width-driven sizing is safe because this section is
      not pinned and can grow naturally with the cards. */
   .services-hscroll:not(.is-pinned):not(.is-mobile-scroll) .service-visual { flex: 0 0 calc(100vw - 24vw); }

@@ -293,6 +293,7 @@ export default function AmigasExperience() {
           addMediaParallax("top 12%");
         } else {
           servicesWindow.classList.add("is-mobile-scroll");
+          const servicesSticky = servicesWindow.querySelector<HTMLElement>(".services-sticky");
 
           let mobileScrollDistance = 0;
           const updateMobileDistance = () => {
@@ -300,6 +301,17 @@ export default function AmigasExperience() {
             const changed = Math.abs(nextDistance - mobileScrollDistance) > 0.5;
             mobileScrollDistance = nextDistance;
             servicesWindow.style.setProperty("--services-scroll-distance", `${mobileScrollDistance}px`);
+            // The corridor's total height is stickyHeight + scroll distance
+            // (see .is-mobile-scroll in globals.css) — sticky elements always
+            // take their own height worth of scroll to pass by once released,
+            // so a stickyHeight sized to a full viewport (the old fixed
+            // `100svh - 74px`) left a near-full-screen dead zone, frozen on
+            // the last card, before the next section would appear. Measuring
+            // the sticky's actual (content-fit) height keeps that trailing
+            // scroll matched to the card's real size instead.
+            if (servicesSticky) {
+              servicesWindow.style.setProperty("--services-sticky-height", `${servicesSticky.offsetHeight}px`);
+            }
             return changed;
           };
           updateMobileDistance();
