@@ -113,7 +113,12 @@ export default function TagScene({ progress }: TagSceneProps) {
       let fallbackFrame = 0;
       const animateFallback = () => {
         if (fallback) {
-          const turn = prefersReducedMotion ? 0 : progress.current * (isNarrowViewport ? 450 : 540);
+          // Must land on a multiple of 360° away from 180° so the object
+          // rests flat on its back (logo) face, matching the WebGL path's
+          // "ends in .5 turns" rule — 450° (narrow) used to resolve to a
+          // 90°, edge-on angle instead, so the fallback never actually
+          // reached the logo face.
+          const turn = prefersReducedMotion ? 0 : progress.current * (isNarrowViewport ? 180 : 540);
           const tilt = prefersReducedMotion ? -4 : -4 + Math.sin(progress.current * Math.PI * 3) * 9;
           const roll = prefersReducedMotion ? -2 : -2 + Math.sin(progress.current * Math.PI * 2) * 3;
           fallback.style.transform = `rotateX(${tilt}deg) rotateY(${turn}deg) rotateZ(${roll}deg)`;
@@ -198,7 +203,22 @@ export default function TagScene({ progress }: TagSceneProps) {
       back.rotation.y = Math.PI;
       tagGroup.add(back);
     };
-    logoImage.src = "/logo-amigas-do-pet.jpeg";
+    // On a slow/flaky mobile connection this request either never resolves
+    // (silently dropped by the browser) or arrives after a couple of retries;
+    // without a retry the back face is permanently blank rather than late.
+    // The source is a small dedicated texture, not the ~1.3MB brand asset the
+    // rest of the page uses — a WebGL texture only ever needs the pixels it
+    // will actually render at (this decal tops out at 1024x1024).
+    let logoLoadAttempts = 0;
+    logoImage.onerror = () => {
+      if (cancelled) return;
+      logoLoadAttempts += 1;
+      if (logoLoadAttempts > 3) return;
+      window.setTimeout(() => {
+        if (!cancelled) logoImage.src = `/logo-amigas-do-pet-tex.jpg?retry=${logoLoadAttempts}`;
+      }, 600 * logoLoadAttempts);
+    };
+    logoImage.src = "/logo-amigas-do-pet-tex.jpg";
 
     const connectorMaterial = new THREE.MeshPhysicalMaterial({
       color: "#b6768b",
@@ -327,7 +347,7 @@ export default function TagScene({ progress }: TagSceneProps) {
           <div className="tag-fallback-face tag-fallback-back">
             <Image
               className="tag-fallback-logo"
-              src="/logo-amigas-do-pet.jpeg"
+              src="/logo-amigas-do-pet-tex.jpg"
               width={180}
               height={180}
               unoptimized

@@ -161,11 +161,13 @@ export default function AmigasExperience() {
         tagProgress.current = p;
 
         if (stageEl && isMobileViewport) {
-          // The intro copy is taller than the later narrative steps. Keep the
-          // medallion lower while the intro is visible, then bring it closer
-          // as the shorter messages take over the same mobile viewport.
+          // The intro copy is the tallest narrative step and already fills
+          // its row, so the medallion must stay at 0% (its natural row 2
+          // position) while it's visible — any earlier upward pull cuts into
+          // that text. Only once the intro has faded (past p=.12, matching
+          // its fade-out margin) is there slack to pull the medallion up.
           const compactT = gsap.utils.clamp(0, 1, (p - .12) / .1);
-          stageEl.style.setProperty("--mobile-stage-shift", `${-18 - compactT * 12}%`);
+          stageEl.style.setProperty("--mobile-stage-shift", `${-compactT * 26}%`);
         }
 
         for (const { el, step, margin } of steps) {
@@ -323,7 +325,14 @@ export default function AmigasExperience() {
               });
             };
             servicesResizeObserver = new ResizeObserver(refreshMobileServices);
-            servicesResizeObserver.observe(servicesWindow);
+            // Only the track: updateMobileDistance() writes
+            // --services-scroll-distance, which drives servicesWindow's own
+            // CSS height (see .is-mobile-scroll in globals.css). Observing
+            // servicesWindow too meant every distance update resized the very
+            // element being observed, re-triggering itself forever — the
+            // page's scrollable height ran away without bound ("infinite"
+            // scroll). servicesTrack's width never depends on that height, so
+            // it's a safe, non-circular signal for real content/layout changes.
             servicesResizeObserver.observe(servicesTrack);
           }
         }

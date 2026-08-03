@@ -421,7 +421,11 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
      since their children are absolutely positioned (no intrinsic height). */
   .tag-sticky {
     grid-template-columns: 1fr;
-    grid-template-rows: 43% 57%;
+    /* The intro step (eyebrow + slogan + supporting heading + body) is the
+       tallest of the narrative steps and was overflowing a 43% row by ~20px
+       at common phone heights, spilling into row 2's space — give it more
+       room here instead. */
+    grid-template-rows: 50% 50%;
     gap: 0;
     padding: 74px 22px 18px;
     background: linear-gradient(180deg, #f8fbf5 0%, #f8fbf5 58%, #fbf7f7 100%);
@@ -452,15 +456,14 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .tag-narrative-note,
   .tag-prompt,
   .hero-actions { display: none; }
-  /* The text row (row 1) is sized to its own content and leaves little slack,
-     so the medallion is pulled up within row 2 instead of shrinking row 1 —
-     translate only, no resize, so TagScene's ResizeObserver never fires and
-     the 3D object keeps its size. Nothing sits below the stage in this pinned
-     view, so the gap it leaves at the row's bottom reads as intentional
-     breathing room, not a layout hole. */
+  /* Row 2 is only pulled up once the intro (row 1's tallest content) has
+     faded out — see the JS driver, which keeps this at 0% until then. Doing
+     that upward pull unconditionally, even at rest, used to shift the
+     medallion straight into row 1's text. Translate only, no resize, so
+     TagScene's ResizeObserver never fires and the 3D object keeps its size. */
   .tag-stage {
     min-height: 0;
-    --mobile-stage-shift: -18%;
+    --mobile-stage-shift: 0%;
     transform: translateY(var(--mobile-stage-shift));
   }
   .tag-aura { display: none; }
