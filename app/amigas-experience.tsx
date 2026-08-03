@@ -16,6 +16,7 @@ type NarrativeStep = {
   start: number;
   end: number;
   eyebrow?: string;
+  slogan?: string;
   heading?: string;
   brand?: string;
   lead?: string;
@@ -31,6 +32,7 @@ const NARRATIVE_STEPS: NarrativeStep[] = [
   {
     key: "intro", start: 0, end: .18,
     eyebrow: "Clínica veterinária para cães e gatos",
+    slogan: "Estenda sua mão para quem nunca lhe negará amor!",
     heading: "Seu pet merece se sentir bem desde o primeiro momento.",
     body: "Na Amigas do Pet, cuidado, acolhimento e atenção acompanham cada fase da vida.",
     note: "Cuidado veterinário com acolhimento e atenção em cada consulta.",
@@ -123,6 +125,7 @@ export default function AmigasExperience() {
     let servicesRefreshFrame = 0;
     const ctx = gsap.context(() => {
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isMobileViewport = window.matchMedia("(max-width: 600px)").matches;
 
       // Shared with tag-scene.tsx: the spin locks flat on the back face (the
       // real logo texture) exactly at this progress value. The medallion never
@@ -143,6 +146,7 @@ export default function AmigasExperience() {
         .filter((s): s is NonNullable<typeof s> => s !== null);
 
       const promptEl = root.current?.querySelector<HTMLElement>(".tag-prompt") ?? null;
+      const stageEl = root.current?.querySelector<HTMLElement>(".tag-stage") ?? null;
       const canvasWrapEl = root.current?.querySelector<HTMLElement>(".tag-canvas-wrap") ?? null;
       const revealLogoEl = root.current?.querySelector<HTMLElement>(".tag-reveal-logo") ?? null;
       const revealLogoFrameEl = root.current?.querySelector<HTMLElement>(".tag-reveal-logo-frame") ?? null;
@@ -155,6 +159,14 @@ export default function AmigasExperience() {
       // concurrent scroll listeners and per-frame re-renders).
       const applyProgress = (p: number) => {
         tagProgress.current = p;
+
+        if (stageEl && isMobileViewport) {
+          // The intro copy is taller than the later narrative steps. Keep the
+          // medallion lower while the intro is visible, then bring it closer
+          // as the shorter messages take over the same mobile viewport.
+          const compactT = gsap.utils.clamp(0, 1, (p - .12) / .1);
+          stageEl.style.setProperty("--mobile-stage-shift", `${-18 - compactT * 12}%`);
+        }
 
         for (const { el, step, margin } of steps) {
           const fadeIn = step.start <= 0 ? 1 : gsap.utils.clamp(0, 1, (p - step.start) / margin);
@@ -237,7 +249,9 @@ export default function AmigasExperience() {
       const servicesTrack = root.current?.querySelector<HTMLElement>(".visual-services");
       const isDesktop = window.matchMedia("(min-width: 901px)").matches;
       if (servicesWindow && servicesTrack && !prefersReducedMotion) {
-        const getScroll = () => Math.max(0, servicesTrack.scrollWidth - servicesWindow.clientWidth);
+        // Use layout widths instead of scrollWidth so the current GSAP x
+        // transform can never feed back into the next distance measurement.
+        const getScroll = () => Math.max(0, servicesTrack.offsetWidth - servicesWindow.clientWidth);
 
         const addMediaParallax = (start: string) => {
           gsap.utils.toArray<HTMLElement>(".service-visual-media").forEach((img) => {
@@ -278,18 +292,23 @@ export default function AmigasExperience() {
         } else {
           servicesWindow.classList.add("is-mobile-scroll");
 
+          let mobileScrollDistance = 0;
           const updateMobileDistance = () => {
-            servicesWindow.style.setProperty("--services-scroll-distance", `${getScroll()}px`);
+            const nextDistance = getScroll();
+            const changed = Math.abs(nextDistance - mobileScrollDistance) > 0.5;
+            mobileScrollDistance = nextDistance;
+            servicesWindow.style.setProperty("--services-scroll-distance", `${mobileScrollDistance}px`);
+            return changed;
           };
           updateMobileDistance();
 
           gsap.to(servicesTrack, {
-            x: () => -getScroll(),
+            x: () => -mobileScrollDistance,
             ease: "none",
             scrollTrigger: {
               trigger: servicesWindow,
               start: "top 74px",
-              end: () => "+=" + getScroll(),
+              end: () => "+=" + mobileScrollDistance,
               scrub: true,
               invalidateOnRefresh: true,
             },
@@ -300,8 +319,7 @@ export default function AmigasExperience() {
             const refreshMobileServices = () => {
               cancelAnimationFrame(servicesRefreshFrame);
               servicesRefreshFrame = requestAnimationFrame(() => {
-                updateMobileDistance();
-                ScrollTrigger.refresh();
+                if (updateMobileDistance()) ScrollTrigger.refresh();
               });
             };
             servicesResizeObserver = new ResizeObserver(refreshMobileServices);
@@ -353,7 +371,8 @@ export default function AmigasExperience() {
                 style={{ opacity: step.start <= 0 ? 1 : 0 }}
               >
                 {step.eyebrow && <p className="eyebrow">{step.eyebrow}</p>}
-                {step.heading && <h1>{step.heading}</h1>}
+                {step.slogan && <h1 className="clinic-slogan">{step.slogan}</h1>}
+                {step.heading && <p className="hero-supporting-heading">{step.heading}</p>}
                 {step.brand && <p className="tag-narrative-brand">{step.brand}</p>}
                 {step.lead && <p className="tag-narrative-lead">{step.lead}</p>}
                 {step.body && <p className="tag-narrative-body">{step.body}</p>}
@@ -501,18 +520,6 @@ export default function AmigasExperience() {
           <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">WhatsApp: (13) 99745-4144</a>
           <a href={MAPS_URL} target="_blank" rel="noreferrer">Rua João Roberto Corrêa, 1884<br />Praia Grande — SP, CEP 11722-210</a>
         </div>
-        <details className="visual-credits">
-          <summary>Créditos visuais</summary>
-          <div>
-            <a href="https://www.pexels.com/video/doctor-checking-the-dog-6235188/" target="_blank" rel="noreferrer">Vídeo de ultrassonografia — Pexels</a>
-            <a href="https://www.pexels.com/video/veterinarian-checking-dog-s-mouth-6235186/" target="_blank" rel="noreferrer">Vídeo de consulta — Pexels</a>
-            <a href="https://unsplash.com/photos/5Bi6MWlWMbw" target="_blank" rel="noreferrer">Foto — Judy Beth Morris</a>
-            <a href="https://unsplash.com/photos/fQeLC7WlNm8" target="_blank" rel="noreferrer">Foto — Alexander Mass</a>
-            <a href="https://unsplash.com/photos/q-1iFFFN6ls" target="_blank" rel="noreferrer">Foto — Alexander Mass</a>
-            <a href="https://unsplash.com/photos/2hc6ocDAsNY" target="_blank" rel="noreferrer">Foto — Priscilla Du Preez</a>
-            <a href="https://unsplash.com/photos/a-cockatiel-perched-on-someones-knee-0f0SyZ-SH8U" target="_blank" rel="noreferrer">Foto — Anya Akbari</a>
-          </div>
-        </details>
         <a href="#inicio">Voltar ao início ↑</a>
       </footer>
     </div>

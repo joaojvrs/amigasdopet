@@ -88,7 +88,7 @@ nav a:not(.nav-cta):hover { color: var(--green-dark); background: rgba(184,219,1
   .tag-reveal-logo { opacity: 1 !important; }
 }
 .tag-narrative-step .eyebrow { margin: 0 0 16px; }
-.tag-narrative-step h1 {
+.clinic-slogan {
   margin: 0 0 18px; max-width: 540px; font-size: clamp(34px, 3.5vw, 50px);
   line-height: 1.08; letter-spacing: -.045em; font-weight: 600;
   font-family: Georgia, "Times New Roman", serif;
@@ -98,6 +98,10 @@ nav a:not(.nav-cta):hover { color: var(--green-dark); background: rgba(184,219,1
   text-decoration-thickness: 3px;
   text-underline-offset: 10px;
   text-decoration-skip-ink: auto;
+}
+.hero-supporting-heading {
+  margin: 0 0 14px; max-width: 500px; color: #294334;
+  font-size: clamp(17px, 1.45vw, 22px); line-height: 1.3; font-weight: 600;
 }
 .tag-narrative-lead {
   margin: 0; max-width: 530px; font-size: clamp(30px, 3.2vw, 48px);
@@ -320,10 +324,10 @@ main { display: flex; flex-direction: column; }
    by .services-hscroll's overflow: hidden. */
 .service-visual-frame { position: relative; height: min(46vh, 400px); aspect-ratio: 4 / 5; overflow: hidden; }
 .service-visual-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; will-change: transform; filter: saturate(.9) contrast(1.02); }
-.service-visual-caption { display: flex; flex-direction: column; gap: 8px; padding: 22px 24px 26px; background: #fff; }
+.service-visual-caption { display: flex; min-width: 0; flex-direction: column; gap: 8px; padding: 22px 24px 26px; background: #fff; }
 .service-count { color: var(--pink); font-family: "Montserrat", Arial, sans-serif; font-size: 11px; font-weight: 800; letter-spacing: .16em; }
 .service-visual-caption h3 { margin: 0; color: var(--ink); font-size: clamp(19px, 1.8vw, 24px); font-weight: 600; line-height: 1.15; letter-spacing: -.03em; }
-.service-visual-caption p { margin: 0; color: #68746b; font-size: 13.5px; line-height: 1.6; }
+.service-visual-caption p { margin: 0; color: #68746b; font-size: 13.5px; line-height: 1.6; overflow-wrap: anywhere; }
 
 .closing { position: relative; min-height: 86vh; display: grid; grid-template-columns: 1fr 1fr; gap: 6vw; align-items: center; overflow: hidden; padding: 10vh 6vw; background: #e7efe5; }
 .closing:before { content:""; position:absolute; width: 650px; height:650px; border-radius:50%; left:-7%; bottom:-30%; background:white; }
@@ -359,18 +363,6 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
 .footer-contact { display: grid; gap: 6px; line-height: 1.5; }
 .footer-contact strong { color: var(--ink); font-size: 13px; }
 .footer-contact a:hover { color: var(--green-dark); }
-.visual-credits { position: relative; color: #7b857e; font-size: 10px; }
-.visual-credits summary { cursor: pointer; list-style: none; letter-spacing: .08em; text-transform: uppercase; }
-.visual-credits summary::-webkit-details-marker { display: none; }
-.visual-credits summary:after { content: " +"; color: var(--pink); }
-.visual-credits[open] summary:after { content: " −"; }
-.visual-credits div {
-  position: absolute; z-index: 5; right: 0; bottom: 28px; width: 260px; display: grid; gap: 8px;
-  padding: 18px; border: 1px solid rgba(56,87,67,.12); border-radius: 16px;
-  background: rgba(251,250,247,.97); box-shadow: 0 18px 50px rgba(37,48,41,.12); text-align: left;
-}
-.visual-credits a:hover { color: var(--green-dark); }
-
 @media (max-width: 900px) {
   nav a:not(.nav-cta) { display:none; }
   .header { height: 74px; }
@@ -378,7 +370,7 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
      crowds the medallion's stage. */
   .tag-sticky { grid-template-columns: minmax(260px, 46%) 1fr; gap: 2vw; padding: 0 5vw; }
   .tag-reveal-logo-frame { width: min(36vw, 340px); }
-  .tag-narrative-step h1 { font-size: clamp(28px, 4vw, 40px); }
+  .clinic-slogan { font-size: clamp(28px, 4vw, 40px); }
   .tag-narrative-lead { font-size: clamp(20px, 3vw, 26px); }
   .film-intro { grid-template-columns: 1fr; }
   .services-head { grid-template-columns: 1fr; }
@@ -443,12 +435,13 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
     align-items: center;
   }
   .tag-narrative-step .eyebrow { margin-bottom: 12px; font-size: 10px; }
-  .tag-narrative-step h1 {
+  .clinic-slogan {
     max-width: 350px;
-    font-size: clamp(27px, 7.4vw, 35px);
+    font-size: clamp(26px, 7vw, 33px);
     line-height: 1.04;
     text-decoration: none;
   }
+  .hero-supporting-heading { max-width: 330px; font-size: 16px; line-height: 1.25; }
   .tag-narrative-lead {
     max-width: 340px;
     font-size: clamp(20px, 5.6vw, 25px);
@@ -465,7 +458,11 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
      the 3D object keeps its size. Nothing sits below the stage in this pinned
      view, so the gap it leaves at the row's bottom reads as intentional
      breathing room, not a layout hole. */
-  .tag-stage { min-height: 0; transform: translateY(-18%); }
+  .tag-stage {
+    min-height: 0;
+    --mobile-stage-shift: -18%;
+    transform: translateY(var(--mobile-stage-shift));
+  }
   .tag-aura { display: none; }
   .tag-stage-backdrop {
     inset: 8% 5% 5%;
@@ -475,10 +472,10 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
     filter: none;
     animation: none;
   }
-  .tag-fallback-object { width: min(56vw, 225px); height: min(66vw, 270px); }
+  .tag-fallback-object { width: min(64vw, 260px); height: min(75vw, 310px); }
   .tag-aura-pink { width: 95vw; height: 95vw; right: -48vw; top: -28vw; }
   .tag-aura-green { width: 90vw; height: 90vw; left: -55vw; bottom: -20vw; }
-  .tag-reveal-logo-frame { width: min(56vw, 250px); }
+  .tag-reveal-logo-frame { width: min(64vw, 280px); }
   .hero-actions { justify-content: center; margin-top: 22px; }
   .hero-proof { text-align: left; }
   .hero-spark-one { left: 10%; top: 10%; }
@@ -501,6 +498,7 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .services-hscroll:not(.is-pinned):not(.is-mobile-scroll) { overflow-x: auto; overflow-y: hidden; }
   .visual-services { display: flex; gap: 6vw; min-width: max-content; padding-right: 22px; }
   .service-visual { border-radius: 22px; }
+  .services-hscroll.is-mobile-scroll .service-visual { flex-basis: clamp(240px, 60vw, 290px); }
   /* Native mobile scroll: width-driven sizing is safe because this section is
      not pinned and can grow naturally with the cards. */
   .services-hscroll:not(.is-pinned):not(.is-mobile-scroll) .service-visual { flex: 0 0 calc(100vw - 24vw); }
@@ -513,7 +511,6 @@ footer { min-height: 180px; display: flex; align-items: center; justify-content:
   .closing-symbol span { right: 0; top: 18%; }
   footer { flex-direction: column; text-align: center; }
   footer .brand span { display:flex; }
-  .visual-credits div { position: static; margin-top: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

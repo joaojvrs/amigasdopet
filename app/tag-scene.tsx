@@ -185,7 +185,7 @@ export default function TagScene({ progress }: TagSceneProps) {
 
     let cancelled = false;
     let logoTexture: THREE.CanvasTexture | null = null;
-    const logoImage = new Image();
+    const logoImage = new window.Image();
     logoImage.onload = () => {
       if (cancelled) return;
       logoTexture = createCircularLogoTexture(logoImage);
@@ -264,7 +264,7 @@ export default function TagScene({ progress }: TagSceneProps) {
     // and under prefers-reduced-motion (still resolves to the logo, just calmer).
     const SPIN_END = .94;
     const TOTAL_TURNS = prefersReducedMotion ? 0 : (isNarrowViewport ? 0.5 : 1.5);
-    const BASE_SCALE = isNarrowViewport ? 1.12 : 1;
+    const BASE_SCALE = isNarrowViewport ? 1.3 : 1;
 
     let frame = 0;
     const clock = new THREE.Clock();
